@@ -13,8 +13,8 @@ export default {
   components: { ArticlesComponent },
   mounted() {
     axios.get("http://localhost:90/articles").then((response) => {
-      console.log("test", response.data["articles"]);
-      this.articles = response.data["articles"];
+      console.log("test", response.data);
+      this.articles = response.data.articles;
     });
   },
   data() {

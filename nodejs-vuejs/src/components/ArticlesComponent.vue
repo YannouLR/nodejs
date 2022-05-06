@@ -18,7 +18,7 @@ export default {
         <th>Brand</th>
         <th>Action</th>
       </tr>
-      <tr v-for="article in articles" :key="article.id">
+      <tr v-for="article in articles" :key="article">
         <td>{{ article.id }}</td>
         <td>{{ article.title }}</td>
         <td>{{ article.description }}</td>

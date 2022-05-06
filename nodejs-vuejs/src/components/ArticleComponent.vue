@@ -1,42 +1,48 @@
+<template>
+  <div v-if="article">
+    <h2>{{ article.title }}</h2>
+    <p>{{ article.description }}</p>
+    <p>{{ article.brand }}</p>
+    <p>{{ article.price }}{{ article.currency }}</p>
+  </div>
+  <div id="btns">
+    <router-link :to="{ name: 'edit', params: { id: this.$route.params.id } }"
+      >Edit</router-link
+    >
+    | <button id="delete" @click="deleteProduct">Delete</button>
+  </div>
+</template>
 <script>
 export default {
-  props: {
-    article: Object,
+  data() {
+    return {
+      article: {},
+      showModal: false,
+    };
+  },
+  mounted() {
+    this.fetchArticle();
+  },
+  methods: {
+    fetchArticle: async function () {
+      let res = await fetch(
+        `http://localhost:90/articles/${this.$route.params.id}`
+      )
+        .then((r) => r.json())
+        .catch((e) => console.log(e));
+      console.log(res);
+      if (res.message === "Not Found")
+        this.article = { title: "No product found" };
+      this.article = res;
+    },
+    deleteProduct: async function () {
+      await fetch(`http://localhost:90/delete/${this.$route.params.id}`, {
+        method: "DELETE",
+      })
+        .then((r) => r.json())
+        .catch((e) => console.log(e));
+      this.$router.push("/article");
+    },
   },
 };
 </script>
-
-<template>
-  <div class="body">
-    <div class="main">
-      <div v-if="article.id" class="main">
-        <h1>{{ article.title }}</h1>
-        <div>{{ article.description }}</div>
-        <div>
-          <h3>Marque:</h3>
-          {{ article.brand }}
-        </div>
-        <div>{{ article.price }} {{ article.currency }}</div>
-        <div>
-          <router-link :to="{ name: 'edit', params: { id: article.id } }"
-            >Modifier</router-link
-          >
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
-<style scoped>
-.body {
-  display: flex;
-  justify-content: center;
-}
-.main {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-  width: 40rem;
-  align-content: center;
-}
-</style>
