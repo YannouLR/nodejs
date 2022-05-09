@@ -18,4 +18,5 @@ model User {
   email  String?  @db.VarChar(100) @unique
   password  String  @db.VarChar(255)
   role  Role @default(USER)
+  token String
 }

@@ -1,4 +1,5 @@
 //#region 
+require('dotenv').config();
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
@@ -8,6 +9,7 @@ var inventory = require("./inventory.json");
 const fs = require("fs");
 var bodyParser = require("body-parser");
 const { title } = require("process");
+const jwt = require('jsonwebtoken');
 
 var app = express();
 const port = "90";
@@ -89,21 +91,32 @@ app.post("/edit/:id", (req, res) => {
   res.send({ message: "Ok" });
 })
 
-app.post("/addUser", (req, res) => {
+app.post("/signup", (req, res) => {
   const { name, email, password } = req.body;
+  // var token = jwt.sign({
+  //   email,
+  // }, 
+  // process.env.TOKEN_KEY,
+  //   {
+  //     expiresIn: "17h",
+  //   }
+  // );
+  const token = jwt.sign({email}, 'secretkey', {expiresIn: "6h"})
+
   var user1 = {}
   bcrypt.hash(password, 8, async function (err, hash) {
     user1 = await prisma.user.create({
       data: {
         name: name,
         email: email,
-        password: hash
+        password: hash,
+        token: token
       }
     })
     if (user1) {
-      res.send({ message: "Utilisateur crée" });
-    }else {
-      res.send({message : "un champs est mal rempli"});
+      res.send({ token : token });
+    } else {
+      res.send({ message: "un champs est mal rempli" });
     }
   });
 })
