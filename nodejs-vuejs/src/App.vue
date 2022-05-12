@@ -3,6 +3,7 @@
     <router-link to="/">Home</router-link> |
     <router-link to="/article">Articles</router-link> |
     <router-link to="/add">Ajouter un article</router-link> |
+    <router-link to="/signup">Inscription</router-link> |
     <router-link to="/login">Connection</router-link>
   </nav>
   <router-view />

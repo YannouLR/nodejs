@@ -10,6 +10,7 @@ const fs = require("fs");
 var bodyParser = require("body-parser");
 const { title } = require("process");
 const jwt = require('jsonwebtoken');
+const auth = require("./middleware/auth");
 
 var app = express();
 const port = "90";
@@ -17,11 +18,11 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
 //#endregion
-app.get("/articles", (req, res) => {
+app.get("/articles", auth, (req, res) => {
   res.json(inventory);
 })
 
-app.post("/add", (req, res) => {
+app.post("/add", auth, (req, res) => {
   var article = req.body;
   article.id = inventory.articles.length + 1;
   if (
@@ -45,7 +46,7 @@ app.post("/add", (req, res) => {
   return res.send({ message: "Ok" });
 })
 
-app.delete("/delete/:id", function (req, res) {
+app.delete("/delete/:id", auth, function (req, res) {
   let newInventory = inventory.articles.filter(
     (item) => item.id.toString() !== req.params.id.toString()
   );
@@ -59,7 +60,7 @@ app.delete("/delete/:id", function (req, res) {
   res.send({ message: "Ok" });
 });
 
-app.get("/articles/:id", (req, res) => {
+app.get("/articles/:id", auth, (req, res) => {
   const article = inventory.articles.find(
     (a) => a.id.toString() === req.params.id
   );
@@ -67,7 +68,7 @@ app.get("/articles/:id", (req, res) => {
 
 })
 
-app.post("/edit/:id", (req, res) => {
+app.post("/edit/:id", auth, (req, res) => {
   const article = inventory.articles.find(
     (a) => a.id.toString() === req.params.id
   );
@@ -91,53 +92,81 @@ app.post("/edit/:id", (req, res) => {
   res.send({ message: "Ok" });
 })
 
-app.post("/signup", (req, res) => {
-  const { name, email, password } = req.body;
-  // var token = jwt.sign({
-  //   email,
-  // }, 
-  // process.env.TOKEN_KEY,
-  //   {
-  //     expiresIn: "17h",
+app.post("/signup", async (req, res) => {
+  // const { name, email, password } = req.body;
+  // const token = jwt.sign({ email }, 'secretkey', { expiresIn: "6h" });
+  // var user1 = {};
+  // if (req.body.email === "" || req.body.name === "" || req.body.password === "") {
+  //   return res.send({ message: "veuillez remplir tous les champs !!!" })
+  // }
+  // bcrypt.hash(password, 8, async function (err, hash) {
+  //   user1 = await prisma.user.create({
+  //     data: {
+  //       name: name,
+  //       email: email,
+  //       password: hash,
+  //       token: token
+  //     }
+  //   })
+  //   if (user1) {
+  //     res.send({ message: "User create", token: token });
   //   }
-  // );
-  const token = jwt.sign({email}, 'secretkey', {expiresIn: "6h"})
+  // });
+  try {
+    const { name, email, password } = req.body;
 
-  var user1 = {}
-  bcrypt.hash(password, 8, async function (err, hash) {
-    user1 = await prisma.user.create({
-      data: {
-        name: name,
-        email: email,
-        password: hash,
-        token: token
-      }
-    })
-    if (user1) {
-      res.send({ token : token });
-    } else {
-      res.send({ message: "un champs est mal rempli" });
+    if (!(email && password && name)) {
+      res.status(400).send("All input is required");
     }
-  });
+
+    const oldUser = await prisma.user.findUnique({ email });
+
+    if (oldUser) {
+      return res.status(409).send("User Already Exist. Please Login");
+    }
+
+    encryptedPassword = await bcrypt.hash(password, 10);
+
+    const user = await prisma.user.create({
+      name,
+      email,
+      password: encryptedPassword,
+    });
+    const token = jwt.sign(
+      { user_id: user._id, email },
+      process.env.TOKEN_KEY,
+      {
+        expiresIn: "2h",
+      }
+    );
+    user.token = token;
+
+    res.status(201).send(user);
+  } catch (err) {
+    console.log(err);
+  }
 })
 
-app.post("/modifyUser", (req, res) => {
-  // const foundedUser = await prisma.user.findUnique({
-  //   where: {
-  //     email: "toto@toto.com"
-  //   }
-  // })
-  // console.log(foundedUser);
-  // if (!foundedUser) {
-  //   console.warn("sorry no item found")
-  // }
-  // var isValidUser = false;
+app.post("/login", async (req, res) => {
+  const { name, email, password } = req.body
+  const token = jwt.sign({ email }, 'secretkey', { expiresIn: "6h" });
 
-  // bcrypt.compare(password, foundedUser?.password, function (err, result) {
-  //   isValidUser = result;
-  //   result && console.log("C'est trouvé")
-  // })
-  // res.send({ message: "Utilisateur modifié" });
+  const foundedUser = await prisma.user.findUnique({
+    where: {
+      email: email,
+    }
+  })
+  // console.log("foundedUser", foundedUser);
+  if (!foundedUser) {
+    console.warn("sorry no item found")
+    return res.send({ message: "Aucun utilisateur trouvé" })
+  }
+  var isValidUser = false;
+
+  bcrypt.compare(password, foundedUser?.password, function (err, result) {
+    isValidUser = result;
+    result && res.send({ token: token });;
+  })
 })
 
 app.listen("90", () => {

@@ -26,7 +26,12 @@ export default {
   methods: {
     fetchArticle: async function () {
       let res = await fetch(
-        `http://localhost:90/articles/${this.$route.params.id}`
+        `http://localhost:90/articles/${this.$route.params.id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
       )
         .then((r) => r.json())
         .catch((e) => console.log(e));

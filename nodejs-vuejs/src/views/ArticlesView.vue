@@ -12,10 +12,16 @@ import axios from "axios";
 export default {
   components: { ArticlesComponent },
   mounted() {
-    axios.get("http://localhost:90/articles").then((response) => {
-      console.log("test", response.data);
-      this.articles = response.data.articles;
-    });
+    axios
+      .get("http://localhost:90/articles", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      })
+      .then((response) => {
+        console.log("test", response.data);
+        this.articles = response.data.articles;
+      });
   },
   data() {
     return {

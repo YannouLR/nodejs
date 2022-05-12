@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div v-if="sign">
     <form @submit.prevent="signupsubmit">
       <input
         type="text"
@@ -32,7 +32,7 @@
 export default {
   methods: {
     signupsubmit: async function () {
-      let response = await fetch("http://localhost:90/signup", {
+      let res = await fetch("http://localhost:90/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -41,8 +41,8 @@ export default {
       })
         .then((r) => r.json())
         .catch((e) => console.log("error", e));
-      this.sign = response;
-      if (response) this.response = "l'utilisateur a bien était créer";
+      this.sign = res;
+      if (res) this.$router.push("/article");
     },
   },
   data() {
